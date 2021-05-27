@@ -8,51 +8,44 @@ robobit.led_rainbow()
 distance = 0
 accelZ = 0
 accelY = 0
-calibSample = [0] 
-calibSampleSize = 20
-calibDone = False
 
-def calibrateAccel(number:number):                   
+def calibrate():                  
     sampleMax = 0
     sampleMin = 0
-    if len(calibSample) < calibSampleSize:
-        calibSample.append(number)  
+    calibSample = [] 
+    calibSampleSize = 100
+    basic.show_string("C") 
+    for i in range(calibSampleSize):
+        calibSample.append(input.acceleration(Dimension.Z)) 
+        basic.pause(100)
+        
     #sampleMax = max(calibSample)
     for value in calibSample:
         if value > sampleMax:
             sampleMax = value
         if value < sampleMin:
-            sampleMin = value
-    serial.write_value("Max : ", sampleMax)
-    serial.write_value("Min : ", sampleMin)
-    serial.write_value("Length : ", len(calibSample))          
+            sampleMin = value  
+    return [sampleMin, sampleMax]     
 
-
+calibValues = calibrate()
 def on_forever():
+           
+    distance = robobit.sonar(RBPingUnit.Centimeters);    
+    accelZ = input.acceleration(Dimension.Z) 
 
-    for i in range(calibSampleSize):
-        calibrateAccel(input.acceleration(Dimension.Z))
-        basic.pause(100)
-    #robobit.startScanner(0xffff00, 100);
-    #robobit.go(RBDirection.FORWARD, 50)
-    #distance = robobit.sonar(RBPingUnit.Centimeters);    
-    #basic.show_number(distance)
-    #if (distance <= 6):
-        #robobit.stop(RBStopMode.BRAKE)
-        ##robobit.goms(RBDirection.REVERSE, 50, 400)
-        #basic.pause(1000) 
-        #robobit.rotatems(RBRobotDirection.LEFT, 60, 400)
-    #basic.show_number(input.acceleration(Dimension.Y)) 
-    #accelX = input.acceleration(Dimension.X) 
-    #strength = input.acceleration(Dimension.STRENGTH)        
-    #serial.write_value("strength: ", strength)
-    #serial.write_value("accel X: ", accelX)
-    #serial.write_value("strength3D: ", input.acceleration(Dimension.STRENGTH))
-    #serial.write_value("distance: ", distance)
-    #led.plot_bar_graph(accelZ, 1023)
-    #serial.write_value("accel Z: ", accelZ)
-    #if input.acceleration(Dimension.STRENGTH) >= 1023 and input.acceleration(Dimension.STRENGTH) <= 1049 and distance <= 4 :
-        #serial.write_line("STATIONARY")
-    #else:
-        #serial.write_line("MOVING")
+    #led.plot_bar_graph(input.acceleration(Dimension.Z), 1023)
+    serial.write_value("min: ", calibValues[0])
+    serial.write_value("max: ", calibValues[1])
+    serial.write_value("distance: ", distance)
+    if distance <= 8 and accelZ >= calibValues[0] and accelZ <= calibValues[1]:
+        serial.write_line("NEAR OBSTACLE")
+        basic.show_string("O")
+        robobit.stop(RBStopMode.BRAKE)
+        basic.pause(1000)
+        robobit.goms(RBDirection.REVERSE, 50, 400)
+        robobit.rotatems(RBRobotDirection.LEFT, 60, 400)
+    else:
+        serial.write_line("MOVING")
+        basic.show_string("M")
+        robobit.go(RBDirection.FORWARD, 50)
 basic.forever(on_forever)
