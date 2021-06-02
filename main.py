@@ -9,6 +9,23 @@ calibValues = [0,0]
 calibAvg = 0
 calibDone = False
 average = 0
+tolerance = 10
+turnLeft = True
+
+# Make the direction of rotation random.
+def turnDirection():
+    Math.random_boolean()
+    global turnLeft
+    turnLeft = Math.random_boolean()
+    if turnLeft:
+        robobit.rotatems(RBRobotDirection.LEFT, 40, 400)
+        basic.show_string("<")
+        #turnLeft = False
+    else:
+        robobit.rotatems(RBRobotDirection.RIGHT, 40, 400)
+        #turnLeft = True
+        basic.show_string(">")
+        
 
 def calibrate():   
     # This calibrates the accelermometer to detect if the robot has come to a stop               
@@ -17,67 +34,61 @@ def calibrate():
     calibSample = [] 
     calibSampleSize = 100
     basic.show_string("C")
-    robobit.go(RBDirection.FORWARD, 50) 
+    robobit.go(RBDirection.FORWARD, 40) 
     # Push a series of samples of the accelerometer into an array, to detect a broad range of changing movements
     for i in range(calibSampleSize):
         calibSample.append(input.acceleration(Dimension.Z)) 
-        #serial.write_value("values: ", calibSample[i])
         basic.pause(50)
     # Get average of sample values
     figure = 0
     for i in range (calibSampleSize):
         figure += calibSample[i]       
     average = figure / calibSampleSize
+    # When caliibration is complete move robot and set display to 'D' - Done.
     robobit.stop(RBStopMode.BRAKE)
     robobit.goms(RBDirection.REVERSE, 50, 1000)
     basic.show_string("D")
+    # Set boolean to true to conirm calibration complete.
     global calibDone
     calibDone = True
-    #serial.write_value("Calibration done: ", calibDone)
     #Calculate the min and max values for the accelerometer. How much it is moving while it is revving against a wall or an object
     serial.write_numbers(calibSample)
-    for value in calibSample:
-        if value > sampleMax:
-            sampleMax = value                  
-        if value < sampleMin:
-            sampleMin = value            
-    #serial.write_value("Min: ", sampleMin)
-    #serial.write_value("Max: ", sampleMax)
+    #for value in calibSample:
+    #    if value > sampleMax:
+    #        sampleMax = value                  
+    #    if value < sampleMin:
+    #        sampleMin = value            
     serial.write_value("Average", average)
-    #return [sampleMin, sampleMax]
     return average 
-
-
-
 
 def moveAndAvoid():       
     distance = robobit.sonar(RBPingUnit.Centimeters);    
     accelZ = input.acceleration(Dimension.Z) 
-    #led.plot_bar_graph(input.acceleration(Dimension.Z), 1023)
-    #serial.write_value("min: ", calibValues[0])
-    #serial.write_value("max: ", calibValues[1])
-    serial.write_value("distance: ", distance)
-    if distance <= 15 :
+    # Use sonar distance to stop and reverse the robot.
+    if distance <= 25 :
         robobit.led_clear()
         serial.write_line("NEAR OBSTACLE")
         basic.show_string("O")
         robobit.stop(RBStopMode.BRAKE)
-        basic.pause(500)
-        robobit.goms(RBDirection.REVERSE, 50, 200)
-        robobit.rotatems(RBRobotDirection.LEFT, 60, 400)
-    elif accelZ >= calibAvg - 8 and accelZ <= calibAvg + 8:
+        # basic.pause(500)
+        robobit.goms(RBDirection.REVERSE, 40, 200)
+        turnDirection()
+     
+    # If the speed of the robot is equal to the avg calibration value plus and minus the tolerance change direction
+    elif accelZ >= calibAvg - tolerance and accelZ <= calibAvg + tolerance:
         robobit.led_clear()
         serial.write_line("STATIONARY")
         basic.show_string("S")
         robobit.stop(RBStopMode.BRAKE)
         basic.pause(500)
-        robobit.goms(RBDirection.REVERSE, 50, 200)
-        robobit.rotatems(RBRobotDirection.RIGHT, 60, 400)
+        #robobit.goms(RBDirection.REVERSE, 40, 200)
+        #robobit.rotatems(RBRobotDirection.RIGHT, 40, 400)
+        turnDirection()
     else:
         serial.write_line("MOVING")
         robobit.led_rainbow() 
         basic.show_string("M")
-        robobit.go(RBDirection.FORWARD, 50)
+        robobit.goms(RBDirection.FORWARD, 40, 1500)
 
 def on_button_pressed_a():
     calibAvg = calibrate()
