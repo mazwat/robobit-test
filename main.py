@@ -97,6 +97,7 @@ input.on_button_pressed(Button.A, on_button_pressed_a)
     
 def on_forever():
     serial.write_value("Accel Z: ", input.acceleration(Dimension.Z))
+    serial.write_value("Compass Degrees: ", input.compass_heading())
     if calibDone:
         basic.show_string("/")
         moveAndAvoid()       

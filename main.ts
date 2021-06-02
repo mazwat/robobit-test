@@ -102,6 +102,7 @@ input.onButtonPressed(Button.A, function on_button_pressed_a() {
 })
 basic.forever(function on_forever() {
     serial.writeValue("Accel Z: ", input.acceleration(Dimension.Z))
+    serial.writeValue("Compass Degrees: ", input.compassHeading())
     if (calibDone) {
         basic.showString("/")
         moveAndAvoid()
